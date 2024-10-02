@@ -1,0 +1,78 @@
+set fso = CreateObject("Scripting.FileSystemObject")
+
+' Yêu cầu người dùng nhập đường dẫn thư mục
+Dim folderPath
+folderPath = InputBox("Please enter the folder path:", "Folder Path")
+If folderPath = "" Or Not fso.FolderExists(folderPath) Then
+    MsgBox "Invalid folder path. The process will be terminated."
+    WScript.Quit
+End If
+
+set root = fso.getFolder(folderPath)
+
+' Nhập phạm vi số file cũ và số bắt đầu của file mới
+Dim oldStart, oldEnd, newStart
+oldStart = InputBox("Enter the starting number of the old file (e.g., 10):", "Starting Number of Old File")
+oldEnd = InputBox("Enter the ending number of the old file (e.g., 50):", "Ending Number of Old File")
+newStart = InputBox("Enter the starting number of the new sequence (e.g., 100):", "Starting Number of New File")
+
+Dim number
+number = CInt(newStart) ' Bắt đầu từ số mới nhập vào
+
+' Tạo mảng để lưu trữ tên file
+Dim fileList()
+Dim fileCount
+fileCount = 0
+
+' Lưu tất cả các file vào mảng
+for each file in root.Files
+    ReDim Preserve fileList(fileCount)
+    Set fileList(fileCount) = file
+    fileCount = fileCount + 1
+next
+
+' Sắp xếp danh sách file theo tên
+Dim i, j, tempFile
+for i = 0 to UBound(fileList) - 1
+    for j = i + 1 to UBound(fileList)
+        if LCase(fileList(i).Name) > LCase(fileList(j).Name) then
+            Set tempFile = fileList(i)
+            Set fileList(i) = fileList(j)
+            Set fileList(j) = tempFile
+        end if
+    next
+next
+
+' Đổi tên file theo số mới
+for i = 0 to UBound(fileList)
+    ' Lấy số hiện tại từ tên file (bỏ dấu # và phần mở rộng)
+    Dim currentNumber
+    currentNumber = Mid(fileList(i).Name, 2, InStr(fileList(i).Name, ".") - 2) ' Lấy phần số từ tên file
+
+    ' Kiểm tra nếu số hiện tại nằm trong phạm vi cần đổi
+    If CInt(currentNumber) >= CInt(oldStart) And CInt(currentNumber) <= CInt(oldEnd) Then
+        ' Định dạng số mới
+        Dim formattedNumber
+        if number < 10 then
+            formattedNumber = "#00" & number  ' Thêm # và 2 số 0
+        elseif number < 100 then
+            formattedNumber = "#0" & number   ' Thêm # và 1 số 0
+        else
+            formattedNumber = "#" & number    ' Không thêm số 0
+        end if
+        
+        ' Lấy phần mở rộng của file
+        Dim fileExtension
+        fileExtension = fso.GetExtensionName(fileList(i).Name)
+
+        ' Đổi tên file thành số mới
+        fileList(i).Name = formattedNumber & "." & fileExtension ' Đổi tên file
+        number = number + 1 ' Tăng số thứ tự mới
+    End If
+next
+
+MsgBox "Renamed files from #" & oldStart & " to #" & oldEnd & " to new sequence starting from #" & newStart
+
+
+
+
